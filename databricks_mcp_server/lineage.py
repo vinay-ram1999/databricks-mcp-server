@@ -12,18 +12,13 @@ def get_table_lineage(table_name: str) -> dict:
     """
     logger.info(f"fetching lineage for: {table_name}")
 
-    try:
-        endpoint = "/api/2.0/lineage-tracking/table-lineage/"
-        params = {"table_name": table_name, "include_entity_lineage": True}
+    endpoint = "/api/2.0/lineage-tracking/table-lineage/"
+    params = {"table_name": table_name, "include_entity_lineage": True}
 
-        resp = client.do(
-            method="GET",
-            endpoint=endpoint,
-            params=params
-        )
-    except Exception as e:
-        error_details = str(e)
-        logger.error(error_details)
-        return {"error": error_details}
-    
+    resp = client.do(
+        method="GET",
+        endpoint=endpoint,
+        params=params
+    )
+
     return resp
