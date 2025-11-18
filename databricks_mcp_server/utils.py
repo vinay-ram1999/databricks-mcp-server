@@ -159,12 +159,13 @@ def _format_table_constraints(constraints: List[TableConstraint]) -> str:
     return "\n".join(rows)
 
 
-def _format_single_table(table: TableInfo, lineage: Dict) -> str:
+def _format_single_table(table: TableInfo, lineage: Dict, extended: bool = False) -> str:
     """Format a single table's information into markdown.
     
     Args:
         table: TableInfo object containing table metadata
         lineage: Optional lineage information dictionary
+        extended: Whether to include extended information
         
     Returns:
         Formatted markdown string for the table
@@ -183,61 +184,67 @@ def _format_single_table(table: TableInfo, lineage: Dict) -> str:
         "",
     ]
     
-    # Add schema/columns section
-    if table.columns:
-        lines.append("### Schema")
-        lines.append(_format_columns(table.columns))
-        lines.append("")
-    
-    # Add table constraints section if available
-    constraints_section = _format_table_constraints(table.table_constraints)
-    if constraints_section:
-        lines.append("### Constraints")
-        lines.append(constraints_section)
-        lines.append("")
-    
-    # Add lineage section if available
-    lineage_section = _format_lineage_info(lineage)
-    if lineage_section:
-        lines.append("### Lineage")
-        lines.append(lineage_section)
-        lines.append("")
-    
+    if extended:
+        # Add schema/columns section
+        if table.columns:
+            lines.append("### Schema")
+            lines.append(_format_columns(table.columns))
+            lines.append("")
+            
+        # Add table constraints section if available
+        constraints_section = _format_table_constraints(table.table_constraints)
+        if constraints_section:
+            lines.append("### Constraints")
+            lines.append(constraints_section)
+            lines.append("")
+        
+        # Add lineage section if available
+        lineage_section = _format_lineage_info(lineage)
+        if lineage_section:
+            lines.append("### Lineage")
+            lines.append(lineage_section)
+            lines.append("")
+        
     return "\n".join(lines)
 
 
-def format_table_info(content: Dict[str, List]) -> str:
+def format_table_info(table_info: List[TableInfo], lineage_info: Optional[List[Dict]] = [], extended: Optional[bool] = False) -> str:
     """Parse and format multiple table information into LLM-friendly Markdown.
     
     This function takes table metadata and lineage information and formats it
     into a structured markdown document optimized for consumption by LLMs.
     
     Args:
-        content: Dictionary with keys:
-            - "tableInfo": List[TableInfo] - table metadata objects
-            - "lineageInfo": List[Dict] - lineage data for each table
+        table_info: table metadata objects
+        lineage_info: lineage data for each table
+        extended: Whether to include extended information
             
     Returns:
         Formatted markdown string with all table information
     """
-    table_info: List[TableInfo] = content.get("tableInfo", [])
-    lineage_info: List[Dict] = content.get("lineageInfo", [])
+    if not table_info:
+        return "**No tables found**"
 
-    assert len(table_info) == len(lineage_info), ValueError("table info and lineage info length mismatch")
+    if lineage_info:
+        assert len(table_info) == len(lineage_info), ValueError("table info and lineage info length mismatch")
+    else:
+        lineage_info.extend({} for _ in table_info)
     
     # Build the document
     doc_lines = [
         "# Table Information",
         "",
-        f"*Total tables*: {len(table_info)}",
+        f"*Total tables extracted*: {len(table_info)}",
         "",
     ]
     
     # Format each table
     for idx, (table, lineage) in enumerate(zip(table_info, lineage_info), 1):
-        logger.info(f"parsing `{table.full_name}` info")
+        table: TableInfo
+        logger.info(f"parsing table `{table.full_name}` info")
+        
         try:
-            formatted_table = _format_single_table(table, lineage)
+            formatted_table = _format_single_table(table, lineage, extended)
             doc_lines.append(formatted_table)
         except Exception as e:
             msg = f"Error parsing table info `{table.full_name}`: {e}"
@@ -255,5 +262,5 @@ def format_table_info(content: Dict[str, List]) -> str:
         if idx < len(table_info):
             doc_lines.append("---")
             doc_lines.append("")
-    
+
     return "\n".join(doc_lines)

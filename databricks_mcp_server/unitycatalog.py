@@ -17,28 +17,30 @@ sdk_client = WorkspaceClient(config=config)
 
 def get_tables_in_schema(catalog_name: str, schema_name: str) -> list[TableInfo]:
     """
-    Fetches all tables in a given schema.
-    """
-    logger.info(f"fetching tables in schema: {catalog_name}.{schema_name}")
-    
-    tables = sdk_client.tables.list(catalog_name=catalog_name, schema_name=schema_name)
-    return tables
+    Fetches all tables in a given catalog and schema.
+    """    
+    tableInfo: List[TableInfo] = sdk_client.tables.list(catalog_name=catalog_name, schema_name=schema_name)
+    table_info = [table for table in tableInfo]
+    # Format the inforamation into markdown
+    output = format_table_info(table_info=table_info)
+    return output
 
 
 def get_table_info(table_names: List) -> str:
     """
     Fetches table metadata and lineage, then formats it into a Markdown string.
     """
-    content = {"tableInfo": [], "lineageInfo": []}
+    table_info = []
+    lineage_info = []
     
     for table_name in table_names:
-        table_info: TableInfo = sdk_client.tables.get(full_name=table_name)
-        lineage_info = get_table_lineage(table_name)
-        content["tableInfo"].append(table_info)
-        content["lineageInfo"].append(lineage_info)
+        tableInfo: TableInfo = sdk_client.tables.get(full_name=table_name)
+        lineageInfo = get_table_lineage(table_name)
+        table_info.append(tableInfo)
+        lineage_info.append(lineageInfo)
     
     # Format the inforamation into markdown
-    output = format_table_info(content)
+    output = format_table_info(table_info=table_info, lineage_info=lineage_info, extended=True)
     return output
 
 

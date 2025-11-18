@@ -3,10 +3,53 @@ import logging
 
 import asyncio
 
-from .unitycatalog import get_table_info
+from .unitycatalog import (
+    get_tables_in_schema,
+    get_table_info,
+)
 
 
 logger = logging.getLogger(__name__)
+
+async def fetch_tables_in_schema(catalog: str, schema: str) -> str:
+    """
+    Retrieves all tables within a given Unity Catalog schema.
+
+    Use this tool when you need to:
+    - Discover what tables exist in a particular catalog/schema
+    - Explore available data assets before deciding which tables to inspect in detail
+    - Validate that a schema has been correctly populated with tables
+
+    The output is formatted in Markdown and typically includes:
+    - A list of table names in the form `catalog.schema.table`
+    - Any additional metadata returned by the backend implementation (if available)
+
+    Args:
+        catalog: The Unity Catalog catalog name (e.g., "main").
+        schema: The schema name within the catalog (e.g., "analytics").
+    
+    Returns:
+        A Markdown-formatted string containing the list of tables in the specified schema.
+        If an error occurs, a Markdown-formatted error message is returned instead
+    """
+    logger.info(f"fetching list of tables in schema: {catalog}.{schema}")
+
+    try:
+        result = await asyncio.to_thread(
+            get_tables_in_schema,
+            catalog_name=catalog,
+            schema_name=schema,
+        )
+        return result
+    except Exception as e:
+        error_details = str(e)
+        logger.error(error_details)
+        return f"""**Error**: Could not retrieve list of tables
+**Details:**
+```
+{error_details}
+```
+"""
 
 async def fetch_table_info(table_names: List) -> str:
     """
@@ -24,8 +67,15 @@ async def fetch_table_info(table_names: List) -> str:
 
     Args:
         table_names: A list of fully qualified three-level name of the table (e.g., ['catalog.schema.table', ...]).
+    
+    Returns:
+        A Markdown-formatted string describing the requested tables. This typically includes:
+        - Table identifiers (table full name, type)
+        - Column definitions (name, data type, nullability, comments)
+        - Table constraints information (if any)
+        - Upstream and downstream lineage information (if available)
     """
-    logger.info(f"fetching metadata for: {table_names}")
+    logger.info(f"fetching metadata for tables: {table_names}")
     try:
         assert isinstance(table_names, list), ValueError("`table_names` argument should be a list of table names.")
         result = await asyncio.to_thread(
@@ -36,7 +86,7 @@ async def fetch_table_info(table_names: List) -> str:
     except Exception as e:
         error_details = str(e)
         logger.error(error_details)
-        return f"""**Error**: Could Not Retrieve table information
+        return f"""**Error**: Could not retrieve table information
 **Details:**
 ```
 {error_details}
