@@ -1,5 +1,4 @@
 from typing import List, Dict, Optional
-import json
 import logging
 
 from databricks.sdk.service.catalog import TableInfo, TableConstraint, SchemaInfo, ColumnInfo, CatalogInfo, RegisteredModelInfo
@@ -172,7 +171,8 @@ def _format_single_table(table: TableInfo, lineage: Dict, extended: bool = False
     """
     # Basic table info
     full_name = table.full_name
-    table_type = table.table_type
+    table_type = table.table_type or "UNKNOWN"
+    data_source = table.data_source_format or "UNKNOWN"
     comment = table.comment or "No description"
     
     # Build the table section
@@ -180,6 +180,7 @@ def _format_single_table(table: TableInfo, lineage: Dict, extended: bool = False
         f"## Table Info",
         f"**Name:** `{full_name}`",
         f"**Type:** `{table_type.value}`",
+        f"**Data Format:** `{data_source.value}`",
         f"**Description:** {comment}",
         "",
     ]
