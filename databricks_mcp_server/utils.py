@@ -158,7 +158,7 @@ def _format_table_constraints(constraints: List[TableConstraint]) -> str:
     return "\n".join(rows)
 
 
-def _format_single_table(table: TableInfo, lineage: Dict, extended: bool = False) -> str:
+def _format_single_table(table: TableInfo, lineage: Dict) -> str:
     """Format a single table's information into markdown.
     
     Args:
@@ -184,27 +184,26 @@ def _format_single_table(table: TableInfo, lineage: Dict, extended: bool = False
         f"**Description:** {comment}",
         "",
     ]
-    
-    if extended:
-        # Add schema/columns section
-        if table.columns:
-            lines.append("### Schema")
-            lines.append(_format_columns(table.columns))
-            lines.append("")
-            
-        # Add table constraints section if available
-        constraints_section = _format_table_constraints(table.table_constraints)
-        if constraints_section:
-            lines.append("### Constraints")
-            lines.append(constraints_section)
-            lines.append("")
+
+    # Add schema/columns section
+    if table.columns:
+        lines.append("### Schema")
+        lines.append(_format_columns(table.columns))
+        lines.append("")
         
-        # Add lineage section if available
-        lineage_section = _format_lineage_info(lineage)
-        if lineage_section:
-            lines.append("### Lineage")
-            lines.append(lineage_section)
-            lines.append("")
+    # Add table constraints section if available
+    constraints_section = _format_table_constraints(table.table_constraints)
+    if constraints_section:
+        lines.append("### Constraints")
+        lines.append(constraints_section)
+        lines.append("")
+    
+    # Add lineage section if available
+    lineage_section = _format_lineage_info(lineage)
+    if lineage_section:
+        lines.append("### Lineage")
+        lines.append(lineage_section)
+        lines.append("")
         
     return "\n".join(lines)
 
@@ -227,41 +226,57 @@ def format_table_info(table_info: List[TableInfo], lineage_info: Optional[List[D
         return "**No tables found**"
 
     if lineage_info:
+        print(lineage_info)
         assert len(table_info) == len(lineage_info), ValueError("table info and lineage info length mismatch")
     else:
         lineage_info.extend({} for _ in table_info)
     
     # Build the document
-    doc_lines = [
-        "# Table Information",
-        "",
-        f"*Total tables extracted*: {len(table_info)}",
-        "",
-    ]
-    
-    # Format each table
-    for idx, (table, lineage) in enumerate(zip(table_info, lineage_info), 1):
-        table: TableInfo
-        logger.info(f"parsing table `{table.full_name}` info")
+    if extended:
+        doc_lines = [
+            "# Table Information",
+            "",
+        ]
         
-        try:
-            formatted_table = _format_single_table(table, lineage, extended)
-            doc_lines.append(formatted_table)
-        except Exception as e:
-            msg = f"Error parsing table info `{table.full_name}`: {e}"
-            logger.error(msg)
-            logger.warning("Falling back to entire table info and lineage information")
-            doc_lines.append(msg)
-            doc_lines.append("")
-            doc_lines.append("Table Info:")
-            doc_lines.append(f"{table.as_dict()}")
-            doc_lines.append("")
-            doc_lines.append("Lineage Info:")
-            doc_lines.append(f"{lineage_info}")
-            doc_lines.append("")
-        # Add separator between tables (except after the last one)
-        if idx < len(table_info):
-            doc_lines.append("---")
-            doc_lines.append("")
+        # Format each table
+        for idx, (table, lineage) in enumerate(zip(table_info, lineage_info), 1):
+            table: TableInfo
+            logger.info(f"parsing table `{table.full_name}` info")
+            
+            try:
+                formatted_table = _format_single_table(table, lineage, extended)
+                doc_lines.append(formatted_table)
+            except Exception as e:
+                msg = f"Error parsing table info `{table.full_name}`: {e}"
+                logger.error(msg)
+                logger.warning("Falling back to entire table info and lineage information")
+                doc_lines.append(msg)
+                doc_lines.append("")
+                doc_lines.append("Table Info:")
+                doc_lines.append(f"{table.as_dict()}")
+                doc_lines.append("")
+                doc_lines.append("Lineage Info:")
+                doc_lines.append(f"{lineage_info}")
+                doc_lines.append("")
+
+            # Add separator between tables (except after the last one)
+            if idx < len(table_info):
+                doc_lines.append("---")
+                doc_lines.append("")
+    else:
+        doc_lines = [
+            f"# List of tables in `{table_info[0].catalog_name}.{table_info[0].schema_name}`",
+            "",
+            f"*Number of Tables*: {len(table_info)}",
+            "",
+            "## Table names:",
+            ""
+        ]
+
+        table_names = [table.name for table in table_info]
+        doc_lines.append(", ".join(table_names))
+        doc_lines.append("")
 
     return "\n".join(doc_lines)
+
+

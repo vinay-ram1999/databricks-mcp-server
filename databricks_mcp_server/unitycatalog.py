@@ -15,14 +15,27 @@ config: Config = DatabricksSDKConfig.authorize()
 sdk_client = WorkspaceClient(config=config)
 
 
+def get_schemas_in_catalog(catalog_name: str) -> list[SchemaInfo]:
+    """
+    Fetches all tables in a given catalog and schema.
+    """    
+    schemas: List[SchemaInfo] = sdk_client.schemas.list(catalog_name=catalog_name)
+    schema_info = [schema for schema in schemas]
+
+    # Format the inforamation into markdown
+    output = None
+    return output
+
+
 def get_tables_in_schema(catalog_name: str, schema_name: str) -> list[TableInfo]:
     """
     Fetches all tables in a given catalog and schema.
     """    
-    tableInfo: List[TableInfo] = sdk_client.tables.list(catalog_name=catalog_name, schema_name=schema_name)
-    table_info = [table for table in tableInfo]
+    tables: List[TableInfo] = sdk_client.tables.list(catalog_name=catalog_name, schema_name=schema_name)
+    table_info = [table for table in tables]
+    
     # Format the inforamation into markdown
-    output = format_table_info(table_info=table_info)
+    output = format_table_info(table_info=table_info, lineage_info=[], extended=False)
     return output
 
 
