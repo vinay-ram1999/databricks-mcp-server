@@ -7,7 +7,7 @@ from databricks.sdk.config import Config
 
 from .config import DatabricksSDKConfig
 from .lineage import get_table_lineage
-from .utils import format_table_info
+from .utils import format_table_info, format_schema_info
 
 logger = logging.getLogger(__name__)
 
@@ -15,19 +15,19 @@ config: Config = DatabricksSDKConfig.authorize()
 sdk_client = WorkspaceClient(config=config)
 
 
-def get_schemas_in_catalog(catalog_name: str) -> list[SchemaInfo]:
+def get_schemas_in_catalog(catalog_name: str) -> List[SchemaInfo]:
     """
-    Fetches all tables in a given catalog and schema.
+    Fetches all schema in a given catalog.
     """    
     schemas: List[SchemaInfo] = sdk_client.schemas.list(catalog_name=catalog_name)
     schema_info = [schema for schema in schemas]
 
     # Format the inforamation into markdown
-    output = None
+    output = format_schema_info(schema_info=schema_info)
     return output
 
 
-def get_tables_in_schema(catalog_name: str, schema_name: str) -> list[TableInfo]:
+def get_tables_in_schema(catalog_name: str, schema_name: str) -> List[TableInfo]:
     """
     Fetches all tables in a given catalog and schema.
     """    

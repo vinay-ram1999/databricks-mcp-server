@@ -177,7 +177,7 @@ def _format_single_table(table: TableInfo, lineage: Dict) -> str:
     
     # Build the table section
     lines = [
-        f"## Table Info",
+        f"## Table",
         f"**Name:** `{full_name}`",
         f"**Type:** `{table_type.value}`",
         f"**Data Format:** `{data_source.value}`",
@@ -244,7 +244,7 @@ def format_table_info(table_info: List[TableInfo], lineage_info: Optional[List[D
             logger.info(f"parsing table `{table.full_name}` info")
             
             try:
-                formatted_table = _format_single_table(table, lineage, extended)
+                formatted_table = _format_single_table(table, lineage)
                 doc_lines.append(formatted_table)
             except Exception as e:
                 msg = f"Error parsing table info `{table.full_name}`: {e}"
@@ -267,10 +267,10 @@ def format_table_info(table_info: List[TableInfo], lineage_info: Optional[List[D
         doc_lines = [
             f"# List of tables in `{table_info[0].catalog_name}.{table_info[0].schema_name}`",
             "",
-            f"*Number of Tables*: {len(table_info)}",
+            f"*Number of tables*: {len(table_info)}",
             "",
             "## Table names:",
-            ""
+            "",
         ]
 
         table_names = [table.name for table in table_info]
@@ -280,3 +280,50 @@ def format_table_info(table_info: List[TableInfo], lineage_info: Optional[List[D
     return "\n".join(doc_lines)
 
 
+def format_schema_info(schema_info: List[SchemaInfo]) -> str:
+    """Format schema information into markdown.
+    
+    Args:
+        schema_info: SchemaInfo object containing schema metadata
+        
+    Returns:
+        Formatted markdown string for the schema
+    """
+    if not schema_info:
+        return "**No schemas found**"
+    
+    doc_lines = [
+        f"# List of schemas in `{schema_info[0].catalog_name}`",
+        "",
+        f"*Number of schemas*: {len(schema_info)}",
+        "",
+    ]
+
+    for idx, schema in enumerate(schema_info, 1):
+        logger.info(f"parsing schema `{schema.full_name}` info")
+
+        name = schema.name
+        comment = schema.comment or "No description"
+        
+        try:
+            doc_lines += [
+                f"## Schema",
+                f"**Name:** `{name}`",
+                f"**Description:** {comment}",
+                "",
+            ]
+        except Exception as e:
+            msg = f"Error parsing schema info `{schema.full_name}`: {e}"
+            logger.error(msg)
+            logger.warning("Falling back to entire schema information")
+            doc_lines.append(msg)
+            doc_lines.append("")
+            doc_lines.append("Schema Info:")
+            doc_lines.append(f"{schema.as_dict()}")
+            doc_lines.append("")
+
+        if idx < len(schema_info):
+            doc_lines.append("---")
+            doc_lines.append("")
+    
+    return "\n".join(doc_lines)
