@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Dict, Any
 import logging
 
 import asyncio
 
+from .warehouse import execute_query
 from .unitycatalog import (
     get_schemas_in_catalog,
     get_tables_in_schema,
@@ -130,3 +131,39 @@ async def fetch_table_info(table_names: List) -> str:
 {error_details}
 ```
 """
+
+
+async def execute_spark_sql_query(query: str) -> Dict[str, Any]:
+    """
+    Executes a read-only Spark SQL query against the Databricks warehouse.
+
+    **IMPORTANT: This tool is for read-only SELECT queries only. Do NOT use for DML operations 
+    (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, etc.) as those will alter data.**
+
+    Use this tool when you need to:
+    - Run SELECT queries to retrieve data from Databricks tables
+    - Perform data analysis, aggregations, and transformations on existing data
+    - Validate data quality or test hypotheses against live data
+    - Explore table contents and structure through SQL
+
+    The query is executed asynchronously and returns the result status along with any data or error information.
+    Query results are formatted as a dictionary containing execution state and response details.
+
+    Args:
+        query: A valid read-only Spark SQL SELECT query string (e.g., "SELECT * FROM catalog.schema.table WHERE condition").
+    
+    Returns:
+        A JSON containing:
+        - "state": Execution status ("SUCCEEDED", "FAILED", etc.)
+        - "data": An array of JSON objects containing the query result (if SUCCEEDED)
+        - "error": Error message if the query failed (if FAILED)
+    """
+    logger.info(f"executing spark sql statement: \n{query}")
+    try:
+        resp = execute_query(query=query)
+        return resp
+    except Exception as e:
+        msg = f"query execution failed: {e}"
+        logger.error(msg)
+        return {"state": "FAILED", "error": msg}
+
