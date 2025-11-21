@@ -154,6 +154,7 @@ async def execute_spark_sql_query(query: str) -> Dict[str, Any]:
     
     Returns:
         A JSON containing:
+        - "query": The original query string that was executed
         - "state": Execution status ("SUCCEEDED", "FAILED", etc.)
         - "data": An array of JSON objects containing the query result (if SUCCEEDED)
         - "error": Error message if the query failed (if FAILED)
@@ -165,5 +166,5 @@ async def execute_spark_sql_query(query: str) -> Dict[str, Any]:
     except Exception as e:
         msg = f"query execution failed: {e}"
         logger.error(msg)
-        return {"state": "FAILED", "error": msg}
+        return {"query": query, "state": "FAILED", "error": msg}
 

@@ -38,11 +38,11 @@ def execute_query(query: str) -> Dict[str, Any]:
                     manifest: ResultManifest = resp.manifest
                     column_names = [col.name for col in manifest.schema.columns]
                     results = [dict(zip(column_names, row)) for row in data]
-                    return {"state": f"{resp.status.state.value}", "data": results}
+                    return {"query": query, "state": f"{resp.status.state.value}", "data": results}
                 else:
-                    return {"state": f"{resp.status.state.value}", "data": []}
+                    return {"query": query, "state": f"{resp.status.state.value}", "data": []}
             elif resp.status.error:
                 msg = f"{resp.status.error.error_code} - {resp.status.error.message}"
                 logger.error(f"{resp.statement_id} - statement failed: \n{msg}")
-                return {"state": f"{resp.status.state.value}", "error": msg}
+                return {"query": query, "state": f"{resp.status.state.value}", "error": msg}
 
