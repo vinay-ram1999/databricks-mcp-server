@@ -1,3 +1,5 @@
+import os
+
 from mcp.server.fastmcp import FastMCP
 
 from databricks_mcp_server.tools import (
@@ -7,10 +9,14 @@ from databricks_mcp_server.tools import (
     execute_spark_sql_query,
 )
 
+PORT = os.environ.get("PORT", 8000)
+
 mcp = FastMCP(
     name="databricks-mcp-server",
     log_level="INFO",
     json_response=True,
+    host="0.0.0.0",
+    port=PORT,
 )
 
 mcp.add_tool(fetch_schemas_in_catalog)
